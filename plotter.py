@@ -1,25 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-setPoint=[]
+targetRPM=[]
 t=[]
-measurement=[]
+measuredRPM=[]
 out=[]
+pwmWidth=[]
 
 for line in open('output.txt', 'r'):
 	values = [float(s) for s in line.split(',')]
 	t.append(values[0])
-	measurement.append(values[1])
+	measuredRPM.append(values[1])
 	out.append(values[2])
-
-#print(len(t))
-
-for x in range(1,len(t)+1):
-	setPoint.append(500)
+	targetRPM.append(values[3])
+	pwmWidth.append(values[4])
 
 
-plt.plot(t,measurement)
+plt.plot(t,measuredRPM)
 plt.plot(t,out) 
-plt.plot(t,setPoint)
-plt.legend(["Measurement", "PID output", "Set Point"]) 
+plt.plot(t,targetRPM)
+plt.plot(t,pwmWidth)
+plt.legend(["measuredRPM", "PID output", "targetRPM","pwmWidth"]) 
 plt.show()

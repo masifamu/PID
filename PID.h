@@ -1,23 +1,33 @@
 #ifndef PID_CONTROLLER_H
 #define PID_CONTROLLER_H
 
+
+//throttle parameters
+#define MIN_THROTTLE 0
+#define MAX_THROTTLE 4095
+#define MIN_RPM      0
+#define MAX_RPM      220
+
+#define MIN_PWM_WIDTH   0
+#define MAX_PWM_WIDTH   480
+
 /* Controller parameters */
-#define PID_KP  50.0f
-#define PID_KI  0.5f
-#define PID_KD  0.25f
+#define PID_KP  10.0f//50.0f
+#define PID_KI  15.85f//0.5f
+#define PID_KD  0.44f//0.25f
 
-#define PID_TAU 0.02f
+#define PID_TAU 0.002f//lower value avoids the higher amplitude overshoot
 
-#define PID_LIM_MIN 0.0f//min throttle
-#define PID_LIM_MAX  4000.0f//max throttle
+#define PID_LIM_MIN    0.0f
+#define PID_LIM_MAX  480.0f//50% of allowable pwmwidth
 
-#define PID_LIM_MIN_INT -11055.0f
-#define PID_LIM_MAX_INT  11055.0f
+#define PID_LIM_MIN_INT -100.0f
+#define PID_LIM_MAX_INT  100.0f
 
 #define SAMPLE_TIME_S 0.01f
 
 /* Maximum run-time of simulation */
-#define SIMULATION_TIME_MAX 40.0f
+#define SIMULATION_TIME_MAX 100.0f
 
 typedef struct {
 

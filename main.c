@@ -6,7 +6,9 @@
 
 /* Simulated dynamical system (first order) */
 float TestSystem_Update(float inp);
-float mapFunction(float x,float x1,float x2, float y1, float y2);
+int mapFunction(int throttle);
+float mapToPWM(float pidOut);
+float getMotorSpeed(float pwmWidth);
 
 int main()
 {
@@ -25,20 +27,20 @@ int main()
     PIDController_Init(&pid);
 
     /* Simulate response using test system */
-    float setpoint = 500.0f;
+    float targetRPM = mapFunction(500);
 
     printf("Time (s)\tSystem Output\tControllerOutput\r\n");
     for (float t = 0.0f; t <= SIMULATION_TIME_MAX; t += SAMPLE_TIME_S) {
-
+        /* making pwm width */
+        float pwmWidth = mapToPWM(pid.out);
         /* Get measurement from system */
-        float measurement = TestSystem_Update(pid.out);
+        float measuredRPM = getMotorSpeed(pwmWidth);
 
         /* Compute new control signal */
-        PIDController_Update(&pid, setpoint, measurement);
+        PIDController_Update(&pid, targetRPM, measuredRPM);
 
-        printf("t=%f\tSYSTEM_OUT=%f\tPID_OUT=%f\tMAPPED_OUT=%f\r\n", t, measurement, pid.out,mapFunction(pid.out,PID_LIM_MIN,PID_LIM_MAX,0,4096));
-        //fprintf(filePointer,"t=%f\tSYSTEM_OUT=%f\tPID_OUT=%f\tMAPPED_OUT=%f\r\n", t, measurement, pid.out,mapFunction(pid.out,PID_LIM_MIN,PID_LIM_MAX,0,4096));
-        fprintf(filePointer,"%f,%f,%f,%f\n", t, measurement, pid.out,mapFunction(pid.out,PID_LIM_MIN,PID_LIM_MAX,0,4096));
+        printf("t=%f\tMEAS_RPM=%f\tPID_OUT=%f\tTARG_RPM=%fPWM_WIDTH=%f\r\n", t, measuredRPM, pid.out,targetRPM,pwmWidth);
+        fprintf(filePointer,"%f,%f,%f,%f,%f\n", t, measuredRPM, pid.out,targetRPM,pwmWidth);
 
     }
 
@@ -57,10 +59,48 @@ float TestSystem_Update(float inp) {
     return output;
 }
 
-float mapFunction(float x,float x1,float x2, float y1, float y2){
-    float y=0;
-    y=((x2-x1)/(y2-y1))*(x-x1)+y1;
+int mapFunction(int throttle){
+    int y=0;
+    y=((throttle-MIN_THROTTLE)*(MAX_RPM-MIN_RPM)/(MAX_THROTTLE-MIN_THROTTLE))+MIN_RPM;
     return y;
+}
+
+float mapToPWM(float pidOut){
+/*    float y=0;
+    y=((float)(pidOut-PID_LIM_MIN)*(MAX_PWM_WIDTH-MIN_PWM_WIDTH)/(PID_LIM_MAX-PID_LIM_MIN))+MIN_PWM_WIDTH;
+    return y;
+*/
+/*    static float pwmW;
+    static float prevPIDOut;
+    if(pidOut-prevPIDOut>0)//meaning that the PID output is increasing
+        pwmW += 1;
+    else if(pidOut-prevPIDOut<0)
+        pwmW -= 1;
+    return pwmW;
+    */
+    return pidOut;
+}
+
+float getMotorSpeed(float pwmWidth){
+
+    static int count;
+    static float output = 0.0f;
+    static float alpha = 0.02f;
+
+    output = (SAMPLE_TIME_S * pwmWidth + output) / (1.0f + alpha * SAMPLE_TIME_S);
+
+    //creating a load increasing mechanism that decreases the RPM
+    count++;
+    if(count == 1500) alpha = 10;
+    if(count == 1510) alpha = 0.02;
+
+    if(count == 3000) alpha = 10;
+    if(count == 3100) alpha = 0.02;
+
+    if(count == 4500) alpha = 10;
+    if(count == 4505) alpha = 0.02;
+
+    return output;
 }
 
 
